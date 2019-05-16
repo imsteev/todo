@@ -1,39 +1,14 @@
 #!/usr/local/bin/python3
 import argparse
 import json
-import dropbox
-from dropbox.files import WriteMode
-
-with open('config.json', 'r') as f:
-    config = json.load(f)
-
-dbx = dropbox.Dropbox(config['apps']['dropbox']['accessToken'])
-
-DEFAULT_TODO_FILE = '/Users/Stephen/Developer/todo/todo.json'
-EXTERNAL_STORAGE_FILE = '/steevetodo/todo.json'
+import manager
 
 class Todo(object):
-    def __init__(self, source=DEFAULT_TODO_FILE):
+    def __init__(self, source):
         self.source = source
         self.todo = self.get(self.source)
 
-    def save(self, dest=DEFAULT_TODO_FILE):
-        dest = dest or self.source
-        with open(dest, 'w') as f:
-            json.dump(self.todo, f)
-
-    def show(self):
-        for i, text in enumerate(self.todo['today']):
-            print("{i}. {text}".format(i=i, text=text))
-
-    def push(self):
-        with open(self.source, 'rb') as f:
-            dbx.files_upload(f.read(), EXTERNAL_STORAGE_FILE, WriteMode('overwrite'))
-
-    def pull(self):
-        pass
-
-    def get(self, source=DEFAULT_TODO_FILE):
+    def get(self, source):
         with open(source, 'r') as f:
             ret = json.load(f)
             if not isinstance(ret, dict):
@@ -44,8 +19,24 @@ class Todo(object):
 
         return ret
 
+    def save(self):
+        with open(self.source, 'w') as f:
+            json.dump(self.todo, f)
+
+    def show(self):
+        """
+        1. item text
+        2. item text
+        ..
+        """
+        for i, text in enumerate(self.todo['today']):
+            print("{i}. {text}".format(i=i+1, text=text))
+
     def add(self, item):
         self.todo['today'].append(item)
+
+    def update(self, i, new_item):
+        self.todo['today'][i] = new_item
 
     def delete(self, stuff):
         if isinstance(stuff, int):
@@ -70,11 +61,8 @@ class Todo(object):
         if i != -1:
             self.todo['today'][i] = {'complete': True, 'text': self.todo['today'][i]}
 
-    def update(self, i, new_item):
-        self.todo['today'][i] = new_item
-
 if __name__ == "__main__":
-    todo = Todo()
+    todo = Todo(manager.DEFAULT_TODO_FILE)
     parser = argparse.ArgumentParser()
     parser.add_argument("-a", "--add", action="store", type=todo.add, help="add text to todo list")
     parser.add_argument("-u", "--update", nargs=2, metavar=('index', 'text'), action="store", help="update todo item at 1-indexed position i")
@@ -89,9 +77,9 @@ if __name__ == "__main__":
     elif args.update:
         todo.update(int(args.update[0]) - 1, args.update[1])
     elif args.push:
-        todo.push()
+        manager.push(todo.source)
     elif args.pull:
-        todo.pull()
+        manager.pull()
     elif args.list:
         todo.show()
 
