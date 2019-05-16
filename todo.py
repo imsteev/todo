@@ -41,8 +41,6 @@ class Todo(object):
     def delete(self, stuff):
         if isinstance(stuff, int):
             self.delete_by_index(stuff)
-        elif isinstance(stuff, str):
-            self.delete_by_text(stuff)
         else:
             raise ValueError('delete does not support deleting by {}'.format(type(stuff)))
 
@@ -52,10 +50,6 @@ class Todo(object):
 
         del self.todo['today'][i]
 
-    def delete_by_text(self, text):
-        i = self.todo['today'].index(text)
-        self.delete_by_index(i)
-
     def mark_complete(self, item):
         i = self.todo['today'].index(item)
         if i != -1:
@@ -64,7 +58,7 @@ class Todo(object):
 if __name__ == "__main__":
     todo = Todo(manager.DEFAULT_TODO_FILE)
     parser = argparse.ArgumentParser()
-    parser.add_argument("-a", "--add", action="store", type=todo.add, help="add text to todo list")
+    parser.add_argument("-a", "--add", nargs=1, metavar=('text'), action="store", help="add text to todo list")
     parser.add_argument("-u", "--update", nargs=2, metavar=('index', 'text'), action="store", help="update todo item at 1-indexed position i")
     parser.add_argument("-d", "--delete", type=int, help="delete text in todo list by 1-indexed position")
     parser.add_argument("-l", "--list", action="store_true", help="show todo list")
@@ -72,7 +66,9 @@ if __name__ == "__main__":
     parser.add_argument("--pull", action="store_true", help="pull todo from external storage")
     args = parser.parse_args()
 
-    if args.delete:
+    if args.add:
+        todo.add(args.add[0])
+    elif args.delete:
         todo.delete_by_index(args.delete - 1)
     elif args.update:
         todo.update(int(args.update[0]) - 1, args.update[1])
@@ -80,7 +76,10 @@ if __name__ == "__main__":
         manager.push(todo.source)
     elif args.pull:
         manager.pull()
+        todo = Todo(manager.DEFAULT_TODO_FILE)
+        todo.show()
     elif args.list:
         todo.show()
 
-    todo.save()
+    if any([args.add, args.delete, args.update]):
+        todo.save()
