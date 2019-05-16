@@ -25,3 +25,16 @@ Create a config.json:
     "EXTERNAL_STORAGE_FILEPATH": "<path_in_storage_folder>"
 }
 ```
+
+# Usage
+
+```
+todo --add (or -a) text  # todo --add "get groceries at 3pm"
+todo --update 2 new_text
+todo --delete 5
+todo --list  # show entire todo list
+todo --push  # push todo to external storage
+todo --pull  # pull todo from external storage
+
+todo --help
+```
