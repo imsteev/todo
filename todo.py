@@ -56,7 +56,7 @@ class Todo(object):
             self.todo['today'][i] = {'complete': True, 'text': self.todo['today'][i]}
 
 if __name__ == "__main__":
-    todo = Todo(manager.DEFAULT_TODO_FILE)
+    todo = Todo(manager.TODO_FILE)
     parser = argparse.ArgumentParser()
     parser.add_argument("-a", "--add", nargs=1, metavar=('text'), action="store", help="add text to todo list")
     parser.add_argument("-u", "--update", nargs=2, metavar=('index', 'text'), action="store", help="update todo item at 1-indexed position i")
@@ -76,7 +76,7 @@ if __name__ == "__main__":
         manager.push(todo.source)
     elif args.pull:
         manager.pull()
-        todo = Todo(manager.DEFAULT_TODO_FILE)
+        todo = Todo(manager.TODO_FILE)
         todo.show()
     elif args.list:
         todo.show()

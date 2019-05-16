@@ -7,12 +7,12 @@ with open('config.json', 'r') as f:
 
 dbx = dropbox.Dropbox(config['apps']['dropbox']['accessToken'])
 
-DEFAULT_TODO_FILE = '/Users/Stephen/Developer/todo/todo.json'
-EXTERNAL_STORAGE_FILE = '/steevetodo/todo.json'
+TODO_FILE = config['TODO_FILEPATH']
+EXTERNAL_STORAGE_FILEPATH = config['EXTERNAL_STORAGE_FILEPATH']
 
 def push(filepath):
     with open(filepath, 'rb') as f:
-        dbx.files_upload(f.read(), EXTERNAL_STORAGE_FILE, WriteMode('overwrite'))
+        dbx.files_upload(f.read(), EXTERNAL_STORAGE_FILEPATH, WriteMode('overwrite'))
 
 def pull():
-    dbx.files_download_to_file(DEFAULT_TODO_FILE, EXTERNAL_STORAGE_FILE)
+    dbx.files_download_to_file(TODO_FILE, EXTERNAL_STORAGE_FILEPATH)
