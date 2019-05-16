@@ -1,3 +1,7 @@
+# Dependencies
+  - Python 3.7+
+  - `pip3 install dropbox`
+
 # To install:
 
   git clone https://github.com/imsteev/todo.git
