@@ -1,3 +1,5 @@
+#!/usr/local/bin/python3
+
 import argparse
 import json
 
@@ -73,6 +75,10 @@ class Todo(object):
         if i != -1:
             self.todo['today'][i] = new_item
 
+    def show_todo(self):
+        for i, text in enumerate(self.todo['today']):
+            print("{i}. {text}".format(i=i, text=text))
+
     def sync(self):
         pass
 
@@ -82,5 +88,9 @@ if __name__ == "__main__":
     parser.add_argument("-a", "--add", action="store", type=todo.add, help="add text to todo list")
     parser.add_argument("--delete-by-text", action="store", type=todo.delete_by_text, help="delete text in todo list")
     parser.add_argument("--delete-by-index", action="store", type=todo.delete_by_index, help="delete text in todo list by 0-indexed position")
-    parser.parse_args()
-    todo.save()
+    parser.add_argument("-l", "--list", action="store_true", help="show todo list")
+    args = parser.parse_args()
+    if args.list:
+        todo.show_todo()
+    else:
+        todo.save()
