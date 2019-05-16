@@ -15,5 +15,4 @@ def push(filepath):
         dbx.files_upload(f.read(), EXTERNAL_STORAGE_FILE, WriteMode('overwrite'))
 
 def pull():
-    pass
-
+    dbx.files_download_to_file(DEFAULT_TODO_FILE, EXTERNAL_STORAGE_FILE)
