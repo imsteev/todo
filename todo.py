@@ -1,43 +1,43 @@
 #!/usr/local/bin/python3
-
 import argparse
 import json
+import dropbox
+from dropbox.files import WriteMode
 
-from dataclasses import dataclass
+with open('config.json', 'r') as f:
+    config = json.load(f)
 
-DEFAULT_TODO_FILE = 'todo.json'
+dbx = dropbox.Dropbox(config['apps']['dropbox']['accessToken'])
 
-@dataclass
-class TodoItem:
-    text: str
-    when: str = ""
-    complete: bool = False
-
-    def to_json(self):
-        return {
-            'text': self.text,
-            'when': self.when,
-            'complete': self.complete
-        }
+DEFAULT_TODO_FILE = '/Users/Stephen/Developer/todo/todo.json'
+EXTERNAL_STORAGE_FILE = '/steevetodo/todo.json'
 
 class Todo(object):
     def __init__(self, source=DEFAULT_TODO_FILE):
-        self.todo_filepath = source
-        self.todo = self.get(self.todo_filepath)
+        self.source = source
+        self.todo = self.get(self.source)
 
     def save(self, dest=DEFAULT_TODO_FILE):
-        dest = dest or self.todo_filepath
+        dest = dest or self.source
         with open(dest, 'w') as f:
             json.dump(self.todo, f)
 
+    def show(self):
+        for i, text in enumerate(self.todo['today']):
+            print("{i}. {text}".format(i=i, text=text))
+
+    def push(self):
+        with open(self.source, 'rb') as f:
+            dbx.files_upload(f.read(), EXTERNAL_STORAGE_FILE, WriteMode('overwrite'))
+
+    def pull(self):
+        pass
+
     def get(self, source=DEFAULT_TODO_FILE):
-        try:
-            with open(source, 'r') as f:
-                ret = json.load(f)
-                if not isinstance(ret, dict):
-                    raise ValueError('todo currently only supports objects. are you using the right file?')
-        except Exception:
-            ret = {}
+        with open(source, 'r') as f:
+            ret = json.load(f)
+            if not isinstance(ret, dict):
+                raise ValueError('todo currently only supports objects. are you using the right file?')
 
         if not 'today' in ret:
             ret['today'] = []
@@ -70,27 +70,29 @@ class Todo(object):
         if i != -1:
             self.todo['today'][i] = {'complete': True, 'text': self.todo['today'][i]}
 
-    def update(self, item, new_item):
-        i = self.todo['today'].index(item)
-        if i != -1:
-            self.todo['today'][i] = new_item
-
-    def show_todo(self):
-        for i, text in enumerate(self.todo['today']):
-            print("{i}. {text}".format(i=i, text=text))
-
-    def sync(self):
-        pass
+    def update(self, i, new_item):
+        self.todo['today'][i] = new_item
 
 if __name__ == "__main__":
     todo = Todo()
     parser = argparse.ArgumentParser()
     parser.add_argument("-a", "--add", action="store", type=todo.add, help="add text to todo list")
-    parser.add_argument("--delete-by-text", action="store", type=todo.delete_by_text, help="delete text in todo list")
-    parser.add_argument("--delete-by-index", action="store", type=todo.delete_by_index, help="delete text in todo list by 0-indexed position")
+    parser.add_argument("-u", "--update", nargs=2, metavar=('index', 'text'), action="store", help="update todo item at 1-indexed position i")
+    parser.add_argument("-d", "--delete", type=int, help="delete text in todo list by 1-indexed position")
     parser.add_argument("-l", "--list", action="store_true", help="show todo list")
+    parser.add_argument("--push", action="store_true", help="push todo to external storage")
+    parser.add_argument("--pull", action="store_true", help="pull todo from external storage")
     args = parser.parse_args()
-    if args.list:
-        todo.show_todo()
-    else:
-        todo.save()
+
+    if args.delete:
+        todo.delete_by_index(args.delete - 1)
+    elif args.update:
+        todo.update(int(args.update[0]) - 1, args.update[1])
+    elif args.push:
+        todo.push()
+    elif args.pull:
+        todo.pull()
+    elif args.list:
+        todo.show()
+
+    todo.save()
