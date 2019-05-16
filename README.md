@@ -6,12 +6,13 @@
 
     export PATH="<path_to_cloned_folder>:$PATH"
 
-  source (.bashrc | .bash_profile)
+  source .bashrc | source .bash_profile
 
 # Configuration
 
-Create a config.json, that looks like:
+Create a config.json:
 
+```
 {
     "apps": {
         "dropbox": {
@@ -19,5 +20,8 @@ Create a config.json, that looks like:
             "appSecret": "yourAppSecret",
             "accessToken": "yourAccessToken"
         }
-    }
+    },
+    "TODO_FILEPATH": "<path_to_todo.json>",
+    "EXTERNAL_STORAGE_FILEPATH": "<path_in_storage_folder>"
 }
+```
