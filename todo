@@ -9,20 +9,39 @@ import manager
 
 DATE_FORMAT = "%m-%d-%Y %I:%M %p"
 
+
 @dataclass
 class TodoItem:
     text: str
-    updated_at: str = None
+    updated_at: str = datetime.datetime.strftime(datetime.datetime.now(), DATE_FORMAT)
     complete: bool = False
 
     def to_json(self):
         # return a copy
         return dict(self.__dict__)
 
-class Todo(object):
+    def update(self, text):
+        if not text:
+            return
+        self.text = text
+        self.updated_at = datetime.datetime.strftime(datetime.datetime.now(), DATE_FORMAT)
+
+
+class Todo():
     def __init__(self, source):
         self.source = source
         self.todo = self.get(self.source)
+        self.to_todo()
+
+    def set_mode(self, mode):
+        self.mode = mode
+
+    def to_todo(self):
+        def todo_to_json(item): return TodoItem(text=item['text'], updated_at=item['updated_at'], complete=item['complete'])
+        self.todo['items'] = list(map(todo_to_json, self.todo['items']))
+
+    def to_json(self):
+        self.todo['items'] = list(map(lambda item: item.to_json(), self.todo['items']))
 
     def get(self, source):
         with open(source, 'r') as f:
@@ -36,9 +55,62 @@ class Todo(object):
         return ret
 
     def save(self):
+        self.to_json()
+        self.validate()
         self.todo['last_updated'] = datetime.datetime.strftime(datetime.datetime.now(), DATE_FORMAT)
         with open(self.source, 'w') as f:
             json.dump(self.todo, f)
+
+    def validate(self):
+        """
+            {
+                'items': [
+                    // item 1
+                    {
+                        'text': <some_text>,
+                        'updated_at': <date_text>,
+                        'complete': <is_complete>
+                    },
+                    // item 2
+                    {
+                        'text': <some_text>,
+                        'updated_at': <date_text>,
+                        'complete': <is_complete>
+                    }
+                    ...
+                ],
+                last_updated: <date_text>
+            }
+        """
+        t = self.todo
+        assert isinstance(t, dict)
+        items = t.get('items')
+        assert isinstance(items, list)
+        assert isinstance(t.get('last_updated'), str)
+        for item in items:
+            assert isinstance(item, dict)
+            assert isinstance(item.get('text'), str)
+            assert isinstance(item.get('updated_at'), str)
+            assert isinstance(item.get('complete'), bool)
+
+    def add(self, text):
+        item = TodoItem(text)
+        self.todo['items'].append(item)
+
+    def update(self, i, new_text):
+        if i < 0 or i >= len(self.todo['items']):
+            raise ValueError
+        self.todo['items'][i].update(new_text)
+
+    def delete(self, i):
+        if i < 0 or i >= len(self.todo['items']):
+            raise ValueError
+        del self.todo['items'][i]
+
+    def set_status_complete(self, i, status):
+        if i < 0 or i >= len(self.todo['items']):
+            raise ValueError
+        self.todo['items'][i].complete = status
 
     def show(self):
         """
@@ -47,59 +119,44 @@ class Todo(object):
         ..
         """
         for i, item in enumerate(self.todo['items']):
-            print("{i}. {text}".format(i=i+1, text=strikethrough(item['text'])))
+            text = item.text if not item.complete else strikethrough(item.text)
+            print("{i}. {text}".format(i=i+1, text=text))
 
         if 'last_updated' in self.todo:
             print("Last updated: {}".format(self.todo['last_updated']))
 
-    def add(self, item):
-        now = datetime.datetime.strftime(datetime.datetime.now(), DATE_FORMAT)
-        self.todo['items'].append(TodoItem(item, now).to_json())
-
-    def update(self, i, new_item):
-        self.todo['items'][i] = new_item
-
-    def delete(self, stuff):
-        if isinstance(stuff, int):
-            self.delete_by_index(stuff)
-        else:
-            raise ValueError('delete does not support deleting by {}'.format(type(stuff)))
-
-    def delete_by_index(self, i):
-        if i < 0 or i >= len(self.todo['items']):
-            raise ValueError('')
-
-        del self.todo['items'][i]
-
-    def mark_complete(self, item):
-        i = self.todo['items'].index(item)
-        if i != -1:
-            self.todo['items'][i] = {'complete': True, 'text': self.todo['items'][i]}
-
 
 def strikethrough(text):
     result = ''
-    for c in text:
+    for c in str(text):
         result = result + c + '\u0336'
     return result
 
+
 if __name__ == "__main__":
-    todo = Todo(manager.TODO_FILE)
     parser = argparse.ArgumentParser()
     parser.add_argument("-a", "--add", nargs=1, metavar=('text'), action="store", help="add text to todo list")
     parser.add_argument("-u", "--update", nargs=2, metavar=('index', 'text'), action="store", help="update todo item at 1-indexed position i")
     parser.add_argument("-d", "--delete", nargs="*", help="delete text in todo list by 1-indexed position")
-    parser.add_argument("-s", "--show", action="store_true", help="same as list")
+    parser.add_argument("-c", "--mark-complete", type=int, help="mark item as complete")
+    parser.add_argument("-i", "--mark-incomplete", type=int, help="mark item as incomplete")
+    parser.add_argument("-s", "--show", action="store_true", help="show the todo list!")
     parser.add_argument("--push", action="store_true", help="push todo to external storage")
     parser.add_argument("--pull", action="store_true", help="pull todo from external storage")
     args = parser.parse_args()
 
+    todo = Todo(manager.TODO_FILE)
+
     if args.add:
         todo.add(args.add[0])
     elif args.delete:
-        todo.delete_by_index(int(args.delete[0]) - 1)
+        todo.delete(int(args.delete[0]) - 1)
     elif args.update:
         todo.update(int(args.update[0]) - 1, args.update[1])
+    elif args.mark_complete:
+        todo.set_status_complete(int(args.mark_complete) - 1, True)
+    elif args.mark_incomplete:
+        todo.set_status_complete(int(args.mark_incomplete) - 1, False)
     elif args.push:
         manager.push(todo.source)
     elif args.pull:
@@ -109,5 +166,11 @@ if __name__ == "__main__":
     elif args.show:
         todo.show()
 
-    if any([args.add, args.delete, args.update]):
+    if any([
+            args.add,
+            args.update,
+            args.delete,
+            args.mark_complete,
+            args.mark_incomplete,
+    ]):
         todo.save()
