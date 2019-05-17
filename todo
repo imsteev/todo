@@ -1,7 +1,23 @@
 #!/usr/local/bin/python3
 import argparse
+from dataclasses import dataclass
+import datetime
 import json
+import time
+
 import manager
+
+DATE_FORMAT = "%m-%d-%Y %I:%M %p"
+
+@dataclass
+class TodoItem:
+    text: str
+    updated_at: str = None
+    complete: bool = False
+
+    def to_json(self):
+        # return a copy
+        return dict(self.__dict__)
 
 class Todo(object):
     def __init__(self, source):
@@ -14,12 +30,13 @@ class Todo(object):
             if not isinstance(ret, dict):
                 raise ValueError('todo currently only supports objects. are you using the right file?')
 
-        if not 'today' in ret:
-            ret['today'] = []
+        if not 'items' in ret:
+            ret['items'] = []
 
         return ret
 
     def save(self):
+        self.todo['last_updated'] = datetime.datetime.strftime(datetime.datetime.now(), DATE_FORMAT)
         with open(self.source, 'w') as f:
             json.dump(self.todo, f)
 
@@ -29,14 +46,18 @@ class Todo(object):
         2. item text
         ..
         """
-        for i, text in enumerate(self.todo['today']):
-            print("{i}. {text}".format(i=i+1, text=text))
+        for i, item in enumerate(self.todo['items']):
+            print("{i}. {text}".format(i=i+1, text=strikethrough(item['text'])))
+
+        if 'last_updated' in self.todo:
+            print("Last updated: {}".format(self.todo['last_updated']))
 
     def add(self, item):
-        self.todo['today'].append(item)
+        now = datetime.datetime.strftime(datetime.datetime.now(), DATE_FORMAT)
+        self.todo['items'].append(TodoItem(item, now).to_json())
 
     def update(self, i, new_item):
-        self.todo['today'][i] = new_item
+        self.todo['items'][i] = new_item
 
     def delete(self, stuff):
         if isinstance(stuff, int):
@@ -45,23 +66,30 @@ class Todo(object):
             raise ValueError('delete does not support deleting by {}'.format(type(stuff)))
 
     def delete_by_index(self, i):
-        if i < 0 or i >= len(self.todo['today']):
-            raise ValueError
+        if i < 0 or i >= len(self.todo['items']):
+            raise ValueError('')
 
-        del self.todo['today'][i]
+        del self.todo['items'][i]
 
     def mark_complete(self, item):
-        i = self.todo['today'].index(item)
+        i = self.todo['items'].index(item)
         if i != -1:
-            self.todo['today'][i] = {'complete': True, 'text': self.todo['today'][i]}
+            self.todo['items'][i] = {'complete': True, 'text': self.todo['items'][i]}
+
+
+def strikethrough(text):
+    result = ''
+    for c in text:
+        result = result + c + '\u0336'
+    return result
 
 if __name__ == "__main__":
     todo = Todo(manager.TODO_FILE)
     parser = argparse.ArgumentParser()
     parser.add_argument("-a", "--add", nargs=1, metavar=('text'), action="store", help="add text to todo list")
     parser.add_argument("-u", "--update", nargs=2, metavar=('index', 'text'), action="store", help="update todo item at 1-indexed position i")
-    parser.add_argument("-d", "--delete", type=int, help="delete text in todo list by 1-indexed position")
-    parser.add_argument("-l", "--list", action="store_true", help="show todo list")
+    parser.add_argument("-d", "--delete", nargs="*", help="delete text in todo list by 1-indexed position")
+    parser.add_argument("-s", "--show", action="store_true", help="same as list")
     parser.add_argument("--push", action="store_true", help="push todo to external storage")
     parser.add_argument("--pull", action="store_true", help="pull todo from external storage")
     args = parser.parse_args()
@@ -69,7 +97,7 @@ if __name__ == "__main__":
     if args.add:
         todo.add(args.add[0])
     elif args.delete:
-        todo.delete_by_index(args.delete - 1)
+        todo.delete_by_index(int(args.delete[0]) - 1)
     elif args.update:
         todo.update(int(args.update[0]) - 1, args.update[1])
     elif args.push:
@@ -78,7 +106,7 @@ if __name__ == "__main__":
         manager.pull()
         todo = Todo(manager.TODO_FILE)
         todo.show()
-    elif args.list:
+    elif args.show:
         todo.show()
 
     if any([args.add, args.delete, args.update]):
