@@ -21,10 +21,10 @@ def TodoItem(text, link=None):
     }
 
 
-class Todo():
+class Todo(object):
     def __init__(self, source):
+        self.todo = self.load(source)
         self.source = source
-        self.todo = self.load(self.source)
 
     def load(self, source):
         with open(source, 'r') as f:
@@ -46,23 +46,21 @@ class Todo():
     def validate(self):
         """
             {
+                'last_updated': <str>,
                 'items': [
                     {
-                        'text': <some_text>,
-                        'updated_at': <date_text>,
-                        'complete': <is_complete>
+                        'text': <str>,
+                        'updated_at': <str>,
+                        'complete': <bool>
                     }
                     ...
-                ],
-                last_updated: <date_text>
+                ]
             }
         """
-        t = self.todo
-        assert isinstance(t, dict)
-        items = t.get('items')
-        assert isinstance(items, list)
-        assert isinstance(t.get('last_updated'), str)
-        for item in items:
+        assert isinstance(self.todo, dict)
+        assert isinstance(self.todo.get('last_updated'), str)
+        assert isinstance(self.todo.get('items'), list)
+        for item in self.todo['items']:
             assert isinstance(item, dict)
             assert isinstance(item.get('text'), str)
             assert isinstance(item.get('updated_at'), str)
@@ -86,11 +84,6 @@ class Todo():
             raise ValueError
         return self.todo['items'][i]
 
-    def set_status_complete(self, i, status):
-        if i < 0 or i >= len(self.todo['items']):
-            raise ValueError
-        self.todo['items'][i]['complete'] = status
-
     def show(self):
         """
         1. item text
@@ -100,12 +93,12 @@ class Todo():
         for i, item in enumerate(self.todo['items']):
             text = item['text']
 
-            link = item.get('link')
-            if link:
-                text += " ({})".format(link)
+            if item.get('link'):
+                text += " ({})".format(item.get('link'))
 
             if item['complete']:
                 text = strikethrough(text)
+
             print("{i}. {text}".format(i=i+1, text=text))
 
         if 'last_updated' in self.todo:
@@ -126,7 +119,7 @@ def now():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    # actions that require saving
+    # actions that require saving current state of Todo.todo
     parser.add_argument("-a", "--add", nargs=1, metavar=('text'), action="store", help="add text to todo list")
     parser.add_argument("-u", "--update", nargs=2, metavar=('index', 'text'), action="store", help="update todo item at 1-indexed position i")
     parser.add_argument("-d", "--delete", nargs="*", help="delete text in todo list by 1-indexed position")
@@ -134,6 +127,7 @@ if __name__ == "__main__":
     parser.add_argument("-c", "--mark-complete", type=int, help="mark item as complete")
     parser.add_argument("-i", "--mark-incomplete", type=int, help="mark item as incomplete")
 
+    # actions that don't require saving
     parser.add_argument("-g", "--goto", nargs=1, metavar=('index'), action="store", help="open link in browser")
     parser.add_argument("-s", "--show", action="store_true", help="show the todo list!")
     parser.add_argument("--push", action="store_true", help="push todo to external storage")
@@ -157,9 +151,9 @@ if __name__ == "__main__":
         if item_link:
             webbrowser.open_new(item_link)
     elif args.mark_complete:
-        todo.set_status_complete(int(args.mark_complete) - 1, True)
+        todo.update(int(args.mark_complete) - 1, complete=True)
     elif args.mark_incomplete:
-        todo.set_status_complete(int(args.mark_incomplete) - 1, False)
+        todo.update(int(args.mark_incomplete) - 1, complete=False)
     elif args.push:
         manager.push(todo.source)
     elif args.pull:
@@ -169,12 +163,10 @@ if __name__ == "__main__":
     elif args.show:
         todo.show()
 
-    if any([
-            args.add,
-            args.update,
-            args.delete,
-            args.link,
-            args.mark_complete,
-            args.mark_incomplete,
-    ]):
+    need_to_save = any([
+        args.add, args.update, args.delete, args.link,
+        args.mark_complete, args.mark_incomplete
+    ])
+
+    if need_to_save:
         todo.save()
