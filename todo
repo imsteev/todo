@@ -8,10 +8,6 @@ import webbrowser
 import manager
 
 
-def now():
-    return datetime.datetime.now().strftime("%m-%d-%Y %I:%M %p")
-
-
 def TodoItem(text, link=None):
     return {
         'text': text,
