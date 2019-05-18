@@ -3,28 +3,30 @@ import argparse
 import datetime
 import json
 import time
+import webbrowser
 
 import manager
 
 
 def now():
-    return datetime.datetime.strftime(datetime.datetime.now(), "%m-%d-%Y %I:%M %p")
+    return datetime.datetime.now().strftime("%m-%d-%Y %I:%M %p")
 
 
-def TodoItem(text):
+def TodoItem(text, link=None):
     return {
         'text': text,
         'updated_at': now(),
-        'complete': False
+        'complete': False,
+        'link': link
     }
 
 
 class Todo():
     def __init__(self, source):
         self.source = source
-        self.todo = self.get(self.source)
+        self.todo = self.load(self.source)
 
-    def get(self, source):
+    def load(self, source):
         with open(source, 'r') as f:
             ret = json.load(f)
             if not isinstance(ret, dict):
@@ -36,8 +38,8 @@ class Todo():
         return ret
 
     def save(self):
-        self.validate()
         self.todo['last_updated'] = now()
+        self.validate()
         with open(self.source, 'w') as f:
             json.dump(self.todo, f)
 
@@ -67,18 +69,22 @@ class Todo():
             assert isinstance(item.get('complete'), bool)
 
     def add(self, text):
-        item = TodoItem(text)
-        self.todo['items'].append(item)
+        self.todo['items'].append(TodoItem(text))
 
-    def update(self, i, new_text):
+    def update(self, i, **kwargs):
         if i < 0 or i >= len(self.todo['items']):
             raise ValueError
-        self.todo['items'][i].update({'text': text, 'last_updated': now()})
+        self.todo['items'][i].update(kwargs)
 
     def delete(self, i):
         if i < 0 or i >= len(self.todo['items']):
             raise ValueError
         del self.todo['items'][i]
+
+    def get(self, i):
+        if i < 0 or i >= len(self.todo['items']):
+            raise ValueError
+        return self.todo['items'][i]
 
     def set_status_complete(self, i, status):
         if i < 0 or i >= len(self.todo['items']):
@@ -92,7 +98,14 @@ class Todo():
         ..
         """
         for i, item in enumerate(self.todo['items']):
-            text = item['text'] if not item['complete'] else strikethrough(item['text'])
+            text = item['text']
+
+            link = item.get('link')
+            if link:
+                text += " ({})".format(link)
+
+            if item['complete']:
+                text = strikethrough(text)
             print("{i}. {text}".format(i=i+1, text=text))
 
         if 'last_updated' in self.todo:
@@ -106,16 +119,26 @@ def strikethrough(text):
     return result
 
 
+def now():
+    return datetime.datetime.strftime(datetime.datetime.now(), "%m-%d-%Y %I:%M %p")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+
+    # actions that require saving
     parser.add_argument("-a", "--add", nargs=1, metavar=('text'), action="store", help="add text to todo list")
     parser.add_argument("-u", "--update", nargs=2, metavar=('index', 'text'), action="store", help="update todo item at 1-indexed position i")
     parser.add_argument("-d", "--delete", nargs="*", help="delete text in todo list by 1-indexed position")
+    parser.add_argument("-l", "--link", nargs=2, metavar=('index', 'link'), action="store", help="reference a link for a todo item")
     parser.add_argument("-c", "--mark-complete", type=int, help="mark item as complete")
     parser.add_argument("-i", "--mark-incomplete", type=int, help="mark item as incomplete")
+
+    parser.add_argument("-g", "--goto", nargs=1, metavar=('index'), action="store", help="open link in browser")
     parser.add_argument("-s", "--show", action="store_true", help="show the todo list!")
     parser.add_argument("--push", action="store_true", help="push todo to external storage")
     parser.add_argument("--pull", action="store_true", help="pull todo from external storage")
+
     args = parser.parse_args()
 
     todo = Todo(manager.TODO_FILE)
@@ -125,7 +148,14 @@ if __name__ == "__main__":
     elif args.delete:
         todo.delete(int(args.delete[0]) - 1)
     elif args.update:
-        todo.update(int(args.update[0]) - 1, args.update[1])
+        todo.update(int(args.update[0]) - 1, text=args.update[1])
+    elif args.link:
+        todo.update(int(args.link[0]) - 1, link=args.link[1])
+    elif args.goto:
+        todo_item = todo.get(int(args.goto[0]) - 1)
+        item_link = todo_item.get('link')
+        if item_link:
+            webbrowser.open_new(item_link)
     elif args.mark_complete:
         todo.set_status_complete(int(args.mark_complete) - 1, True)
     elif args.mark_incomplete:
@@ -143,6 +173,7 @@ if __name__ == "__main__":
             args.add,
             args.update,
             args.delete,
+            args.link,
             args.mark_complete,
             args.mark_incomplete,
     ]):
