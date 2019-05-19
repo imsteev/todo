@@ -19,8 +19,9 @@ Create a config.json:
             "accessToken": "yourAccessToken"
         }
     },
-    "TODO_FILEPATH": "<path_to_todo.json>",
-    "EXTERNAL_STORAGE_FILEPATH": "<path_in_storage_folder>"
+    "TODO_FOLDER": "/Users/Stephen/Developer/todo/",
+    "TODO_FILENAME": "todo.json",
+    "EXTERNAL_TODO_FILEPATH": "<path_in_storage_folder>"
 }
 ```
 

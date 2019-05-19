@@ -1,18 +1,21 @@
+import json
+import os
+
 import dropbox
 from dropbox.files import WriteMode
-import json
 
 with open('config.json', 'r') as f:
     config = json.load(f)
 
 dbx = dropbox.Dropbox(config['apps']['dropbox']['accessToken'])
 
-TODO_FILE = config['TODO_FILEPATH']
-EXTERNAL_STORAGE_FILEPATH = config['EXTERNAL_STORAGE_FILEPATH']
+TODO_FOLDER = config['TODO_FOLDER']
+TODO_FILE = os.path.join(TODO_FOLDER, config['TODO_FILENAME'])
+EXTERNAL_TODO_FILEPATH = config['EXTERNAL_TODO_FILEPATH']
 
-def push(filepath):
-    with open(filepath, 'rb') as f:
-        dbx.files_upload(f.read(), EXTERNAL_STORAGE_FILEPATH, WriteMode('overwrite'))
+def push(dest=EXTERNAL_TODO_FILEPATH, src=TODO_FILE):
+    with open(src, 'rb') as f:
+        dbx.files_upload(f.read(), EXTERNAL_TODO_FILEPATH, WriteMode('overwrite'))
 
-def pull():
-    dbx.files_download_to_file(TODO_FILE, EXTERNAL_STORAGE_FILEPATH)
+def pull(dest=TODO_FILE, src=EXTERNAL_TODO_FILEPATH):
+    dbx.files_download_to_file(dest, src)
