@@ -127,8 +127,7 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--delete", nargs="*", help="delete text in todo list by 1-indexed position")
     parser.add_argument("--clear", action="store_true", help="clear entire todo list")
     parser.add_argument("-l", "--link", nargs="*", action="store", help="reference a link for a todo item")
-    parser.add_argument("-c", "--mark-complete", type=int, help="mark item as complete")
-    parser.add_argument("-i", "--mark-incomplete", type=int, help="mark item as incomplete")
+    parser.add_argument("-t", "--toggle-complete", type=int, help="toggle item as complete or not")
 
     # actions that don't require saving
     parser.add_argument("-g", "--goto", nargs=1, metavar=('index'), action="store", help="open link in browser")
@@ -172,10 +171,10 @@ if __name__ == "__main__":
         item_link = todo_item.get('link')
         if item_link:
             webbrowser.open_new(item_link)
-    elif args.mark_complete:
-        todo.update(int(args.mark_complete) - 1, complete=True)
-    elif args.mark_incomplete:
-        todo.update(int(args.mark_incomplete) - 1, complete=False)
+    elif args.toggle_complete:
+        index = int(args.toggle_complete) - 1
+        todo_item = todo.get(index)
+        todo.update(index, complete=not todo_item['complete'])
     elif args.push:
         todo.validate()
         manager.push(todo.source)
@@ -188,7 +187,7 @@ if __name__ == "__main__":
 
     need_to_save = any([
         args.add, args.update, args.delete, args.clear, args.link,
-        args.mark_complete, args.mark_incomplete
+        args.toggle_complete
     ])
 
     if need_to_save:
