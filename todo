@@ -69,6 +69,7 @@ class Todo(object):
     def update(self, i, **kwargs):
         if i < 0 or i >= len(self.todo['items']):
             raise ValueError
+        kwargs.update({'updated_at': now()})
         self.todo['items'][i].update(kwargs)
 
     def delete(self, start, end=None):
@@ -147,13 +148,15 @@ if __name__ == "__main__":
             link = args.link[0]
             todo.update(index, link=link)
     elif args.delete:
-        try:
+        end = None
+        if len(args.delete[0]) == 4:
+            # todo -d 1..5
             args.delete[0].split("..")
             start = int(args.delete[0][0]) - 1
             end = int(args.delete[0][-1]) - 1
-        except Exception:
+        else:
+            # todo -d 4
             start = int(args.delete[0]) - 1
-            end = start + 1
         todo.delete(start, end)
     elif args.update:
         todo.update(int(args.update[0]) - 1, text=args.update[1])
