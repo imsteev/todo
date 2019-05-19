@@ -131,7 +131,6 @@ if __name__ == "__main__":
 
     # actions that don't require saving
     parser.add_argument("-g", "--goto", nargs=1, metavar=('index'), action="store", help="open link in browser")
-    parser.add_argument("-s", "--show", action="store_true", help="show the todo list!")
     parser.add_argument("--push", action="store_true", help="push todo to external storage")
     parser.add_argument("--pull", action="store_true", help="pull todo from external storage")
     parser.add_argument("--sync", action="store_true", help="sync todo from external storage")
@@ -183,10 +182,10 @@ if __name__ == "__main__":
         manager.pull()
         todo = Todo(manager.TODO_FILE)
         todo.show()
-    elif args.show:
-        todo.show()
     elif args.sync:
         manager.sync()
+    else:
+        todo.show()
 
     need_to_save = any([
         args.add, args.update, args.delete, args.clear, args.link,
