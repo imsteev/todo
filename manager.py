@@ -14,14 +14,14 @@ TODO_FOLDER = config['TODO_FOLDER']
 TODO_FILE = os.path.join(TODO_FOLDER, config['TODO_FILENAME'])
 EXTERNAL_TODO_FILEPATH = config['EXTERNAL_TODO_FILEPATH']
 
-def push(dest=EXTERNAL_TODO_FILEPATH, src=TODO_FILE):
+def push(src=TODO_FILE, dest=EXTERNAL_TODO_FILEPATH):
     with open(src, 'rb') as f:
-        dbx.files_upload(f.read(), EXTERNAL_TODO_FILEPATH, WriteMode('overwrite'))
+        dbx.files_upload(f.read(), dest, WriteMode('overwrite'))
 
-def pull(dest=TODO_FILE, src=EXTERNAL_TODO_FILEPATH):
+def pull(src=EXTERNAL_TODO_FILEPATH, dest=TODO_FILE):
     dbx.files_download_to_file(dest, src)
 
-def sync(src=TODO_FILE, sync_src=EXTERNAL_TODO_FILEPATH):
+def sync(src=TODO_FILE, sync_with=EXTERNAL_TODO_FILEPATH):
     """
     WIP: right now all this does is append the 'items' in external storage to the local todo file
     """
@@ -30,7 +30,7 @@ def sync(src=TODO_FILE, sync_src=EXTERNAL_TODO_FILEPATH):
 
     # load file stored externally
     with tempfile.NamedTemporaryFile() as tmpfile:
-        pull(dest=tmpfile.name, src=EXTERNAL_TODO_FILEPATH)
+        pull(src=sync_with, dest=tmpfile.name)
         external_json = json.load(tmpfile)
 
     # load file stored locally
