@@ -134,6 +134,7 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--show", action="store_true", help="show the todo list!")
     parser.add_argument("--push", action="store_true", help="push todo to external storage")
     parser.add_argument("--pull", action="store_true", help="pull todo from external storage")
+    parser.add_argument("--sync", action="store_true", help="sync todo from external storage")
 
     args = parser.parse_args()
 
@@ -148,11 +149,11 @@ if __name__ == "__main__":
             todo.update(index, link=link)
     elif args.delete:
         end = None
-        if len(args.delete[0]) == 4:
+        if ".." in args.delete[0]:
             # todo -d 1..5
-            args.delete[0].split("..")
-            start = int(args.delete[0][0]) - 1
-            end = int(args.delete[0][-1]) - 1
+            start, end = args.delete[0].split("..")
+            start = int(start) - 1
+            end = int(end) - 1
         else:
             # todo -d 4
             start = int(args.delete[0]) - 1
@@ -184,6 +185,8 @@ if __name__ == "__main__":
         todo.show()
     elif args.show:
         todo.show()
+    elif args.sync:
+        manager.sync()
 
     need_to_save = any([
         args.add, args.update, args.delete, args.clear, args.link,
