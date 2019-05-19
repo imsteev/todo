@@ -71,13 +71,12 @@ class Todo(object):
             raise ValueError
         self.todo['items'][i].update(kwargs)
 
-    def delete(self, i, end=None):
-        if i < 0 or i >= len(self.todo['items']):
-            raise ValueError
-        if end and (end <= i or end >= len(self.todo['items'])):
-            raise Exception('[start, end), where 0 <= start < end < len(todo_items)')
-        end = end or i + 1
-        del self.todo['items'][i:end]
+    def delete(self, start, end=None):
+        """ Deletes items in range [start, end). Note inclusive start, exclusive end. """
+        end = end or start + 1
+        if not (0 <= start < end):
+            raise Exception('Cannot delete items in range [{0}, {1})'.format(start, end))
+        del self.todo['items'][start:end]
 
     def get(self, i):
         if i < 0 or i >= len(self.todo['items']):
@@ -164,7 +163,7 @@ if __name__ == "__main__":
         link = args.link[1]
         todo.update(index, link=link)
     elif args.clear:
-        todo.todo['items'] = []
+        todo.delete(0, len(todo.todo['items']))
     elif args.goto:
         todo_item = todo.get(int(args.goto[0]) - 1)
         item_link = todo_item.get('link')
