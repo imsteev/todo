@@ -2,6 +2,7 @@
 import argparse
 import datetime
 import json
+import prettytable
 import time
 import webbrowser
 
@@ -70,10 +71,13 @@ class Todo(object):
             raise ValueError
         self.todo['items'][i].update(kwargs)
 
-    def delete(self, i):
+    def delete(self, i, end=None):
         if i < 0 or i >= len(self.todo['items']):
             raise ValueError
-        del self.todo['items'][i]
+        if end and (end <= i or end >= len(self.todo['items'])):
+            raise Exception('[start, end), where 0 <= start < end < len(todo_items)')
+        end = end or i + 1
+        del self.todo['items'][i:end]
 
     def get(self, i):
         if i < 0 or i >= len(self.todo['items']):
@@ -86,16 +90,18 @@ class Todo(object):
         2. item text
         ..
         """
+        pt = prettytable.PrettyTable(field_names=['#', 'Text', 'Link'])
+        pt.align['Link'] = 'l'
+        pt.align['Text'] = 'l'
+
         for i, item in enumerate(self.todo['items']):
             text = item['text']
-
-            if item.get('link'):
-                text += " ({})".format(item.get('link'))
-
             if item['complete']:
                 text = strikethrough(text)
 
-            print("{i}. {text}".format(i=i+1, text=text))
+            pt.add_row([i + 1, text, item['link'] or "-"])
+
+        print(pt)
 
         if 'last_updated' in self.todo:
             print("Last updated: {}".format(self.todo['last_updated']))
@@ -119,7 +125,8 @@ if __name__ == "__main__":
     parser.add_argument("-a", "--add", nargs=1, metavar=('text'), action="store", help="add text to todo list")
     parser.add_argument("-u", "--update", nargs=2, metavar=('index', 'text'), action="store", help="update todo item at 1-indexed position i")
     parser.add_argument("-d", "--delete", nargs="*", help="delete text in todo list by 1-indexed position")
-    parser.add_argument("-l", "--link", nargs=2, metavar=('index', 'link'), action="store", help="reference a link for a todo item")
+    parser.add_argument("--clear", action="store_true", help="clear entire todo list")
+    parser.add_argument("-l", "--link", nargs="*", action="store", help="reference a link for a todo item")
     parser.add_argument("-c", "--mark-complete", type=int, help="mark item as complete")
     parser.add_argument("-i", "--mark-incomplete", type=int, help="mark item as incomplete")
 
@@ -134,13 +141,30 @@ if __name__ == "__main__":
     todo = Todo(manager.TODO_FILE)
 
     if args.add:
+        # todo -a "get groceries" -l https://example.com/grocery-list
         todo.add(args.add[0])
+        if args.link:
+            index = len(todo.todo['items']) - 1
+            link = args.link[0]
+            todo.update(index, link=link)
     elif args.delete:
-        todo.delete(int(args.delete[0]) - 1)
+        try:
+            args.delete[0].split("..")
+            start = int(args.delete[0][0]) - 1
+            end = int(args.delete[0][-1]) - 1
+        except Exception:
+            start = int(args.delete[0]) - 1
+            end = start + 1
+        todo.delete(start, end)
     elif args.update:
         todo.update(int(args.update[0]) - 1, text=args.update[1])
     elif args.link:
-        todo.update(int(args.link[0]) - 1, link=args.link[1])
+        # todo -l 1 https://example.com
+        index = int(args.link[0]) - 1
+        link = args.link[1]
+        todo.update(index, link=link)
+    elif args.clear:
+        todo.todo['items'] = []
     elif args.goto:
         todo_item = todo.get(int(args.goto[0]) - 1)
         item_link = todo_item.get('link')
@@ -160,7 +184,7 @@ if __name__ == "__main__":
         todo.show()
 
     need_to_save = any([
-        args.add, args.update, args.delete, args.link,
+        args.add, args.update, args.delete, args.clear, args.link,
         args.mark_complete, args.mark_incomplete
     ])
 
