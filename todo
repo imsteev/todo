@@ -21,22 +21,18 @@ def TodoItem(text, link=None):
 class Todo(object):
     def __init__(self, source):
         self.source = source
-        if os.path.isfile(source):
-            self.refresh()
+        if os.path.isfile(self.source):
+            self.load()
         else:
             self.todo = {'items': [], 'last_updated': now()}
-            with open(self.source, 'w') as f:
-                json.dump(self.todo, f)
 
-    def load(self, source):
-        with open(source, 'r') as f:
-            ret = json.load(f)
-            if not isinstance(ret, dict):
+    def load(self, src=None):
+        self.source = src or self.source
+        with open(self.source, 'r') as f:
+            todo_json = json.load(f)
+            if not isinstance(todo_json, dict):
                 raise ValueError('todo currently only supports objects. are you using the right file?')
-        return ret
-
-    def refresh(self):
-        self.todo = self.load(self.source)
+        self.todo = todo_json
 
     def save(self):
         self.todo['last_updated'] = now()
@@ -185,11 +181,11 @@ if __name__ == "__main__":
         manager.push(todo.source)
     elif args.pull:
         manager.pull()
-        todo.refresh()
+        todo.load()
         todo.show()
     elif args.sync:
         manager.sync()
-        todo.refresh()
+        todo.load()
         todo.show()
     else:
         todo.show()
