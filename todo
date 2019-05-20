@@ -12,9 +12,9 @@ import manager
 def TodoItem(text, link=None):
     return {
         'text': text,
-        'updated_at': now(),
-        'complete': False,
         'link': link
+        'complete': False,
+        'updated_at': now(),
     }
 
 
@@ -67,10 +67,9 @@ class Todo(object):
         self.todo['items'].append(TodoItem(text))
 
     def update(self, i, **kwargs):
-        if i < 0 or i >= len(self.todo['items']):
-            raise ValueError
+        todo_item = self.get(i)
         kwargs.update({'updated_at': now()})
-        self.todo['items'][i].update(kwargs)
+        todo_item.update(kwargs)
 
     def delete(self, start, end=None):
         """ Deletes items in range [start, end). Note inclusive start, exclusive end. """
@@ -126,15 +125,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     # actions that require saving current state of Todo.todo
-    parser.add_argument("-a", "--add", nargs=1, metavar=('text'), action="store", help="add text to todo list")
+    parser.add_argument("-a", "--add", type=str, action="store", help="add text to todo list")
     parser.add_argument("-u", "--update", nargs=2, metavar=('index', 'text'), action="store", help="update todo item at 1-indexed position i")
-    parser.add_argument("-d", "--delete", nargs="*", help="delete text in todo list by 1-indexed position")
-    parser.add_argument("--clear", action="store_true", help="clear entire todo list")
+    parser.add_argument("-d", "--delete", nargs=1, metavar=('index'), action="store", help="delete text in todo list by 1-indexed position")
+    parser.add_argument("-t", "--toggle-complete", type=int, action="store", help="toggle item as complete or not")
     parser.add_argument("-l", "--link", nargs="*", action="store", help="reference a link for a todo item")
-    parser.add_argument("-t", "--toggle-complete", type=int, help="toggle item as complete or not")
+    parser.add_argument("--clear", action="store_true", help="clear entire todo list")
 
     # actions that don't require saving
-    parser.add_argument("-g", "--goto", nargs=1, metavar=('index'), action="store", help="open link in browser")
+    parser.add_argument("-g", "--goto", type=int, action="store", help="open link in browser")
     parser.add_argument("--push", action="store_true", help="push todo to external storage")
     parser.add_argument("--pull", action="store_true", help="pull todo from external storage")
     parser.add_argument("--sync", action="store_true", help="sync todo from external storage")
@@ -145,21 +144,22 @@ if __name__ == "__main__":
 
     if args.add:
         # todo -a "get groceries" -l https://example.com/grocery-list
-        todo.add(args.add[0])
+        todo.add(args.add)
         if args.link:
             index = len(todo.todo['items']) - 1
             link = args.link[0]
             todo.update(index, link=link)
     elif args.delete:
         end = None
-        if ".." in args.delete[0]:
+        index = args.delete[0]
+        if ".." in index:
             # todo -d 1..5
-            start, end = args.delete[0].split("..")
+            start, end = index.split("..")
             start = int(start) - 1
             end = int(end) - 1
         else:
             # todo -d 4
-            start = int(args.delete[0]) - 1
+            start = int(index) - 1
         todo.delete(start, end)
     elif args.update:
         todo.update(int(args.update[0]) - 1, text=args.update[1])
@@ -171,7 +171,7 @@ if __name__ == "__main__":
     elif args.clear:
         todo.delete(0, len(todo.todo['items']))
     elif args.goto:
-        todo_item = todo.get(int(args.goto[0]) - 1)
+        todo_item = todo.get(int(args.goto) - 1)
         item_link = todo_item.get('link')
         if item_link:
             import webbrowser
