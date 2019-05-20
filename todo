@@ -12,17 +12,36 @@ import manager
 def TodoItem(text, link=None):
     return {
         'text': text,
-        'link': link
+        'link': link,
         'complete': False,
         'updated_at': now(),
     }
 
 
 class Todo(object):
+
+    FORMAT = """
+        {
+            'last_updated': <str>,
+            'items': [
+                {
+                    'text': <str>,
+                    'updated_at': <str>,
+                    'complete': <bool>
+                }
+                ...
+            ]
+        }
+    """
+
     def __init__(self, source):
         self.source = source
         if os.path.isfile(self.source):
             self.load()
+            try:
+                self.validate()
+            finally:
+                print("Your todo JSON file should look like:\n{s}".format(s=Todo.FORMAT))
         else:
             self.todo = {'items': [], 'last_updated': now()}
 
@@ -41,19 +60,6 @@ class Todo(object):
             json.dump(self.todo, f)
 
     def validate(self):
-        """
-            {
-                'last_updated': <str>,
-                'items': [
-                    {
-                        'text': <str>,
-                        'updated_at': <str>,
-                        'complete': <bool>
-                    }
-                    ...
-                ]
-            }
-        """
         assert isinstance(self.todo, dict)
         assert isinstance(self.todo.get('last_updated'), str)
         assert isinstance(self.todo.get('items'), list)
