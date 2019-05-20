@@ -19,10 +19,9 @@ Create a config.json:
             "accessToken": "yourAccessToken"
         }
     },
-    "TODO_FOLDER": "/Users/Stephen/Developer/todo/",
-    "TODO_FILENAME": "todo.json",
-    "EXTERNAL_TODO_FOLDER": "/steevetodo/",
-    "EXTERNAL_TODO_FILENAME": "todo15.json"
+    "TODO_FOLDER": "/Users/Stephen/Developer/todo",
+    "EXTERNAL_TODO_FOLDER": "/app/todos"
+    "TODO_FILENAME": "todo.json"
 }
 ```
 
