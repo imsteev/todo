@@ -41,3 +41,5 @@ def sync(src=TODO_FILE, sync_with=EXTERNAL_TODO_FILEPATH):
 
     with open(src, 'w') as f:
         json.dump(local_json, f)
+
+    push(src=src, dest=sync_with)

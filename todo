@@ -20,8 +20,8 @@ def TodoItem(text, link=None):
 
 class Todo(object):
     def __init__(self, source):
-        self.todo = self.load(source)
         self.source = source
+        self.refresh()
 
     def load(self, source):
         with open(source, 'r') as f:
@@ -33,6 +33,9 @@ class Todo(object):
             ret['items'] = []
 
         return ret
+
+    def refresh(self):
+        self.todo = self.load(self.source)
 
     def save(self):
         self.todo['last_updated'] = now()
@@ -180,10 +183,12 @@ if __name__ == "__main__":
         manager.push(todo.source)
     elif args.pull:
         manager.pull()
-        todo = Todo(manager.TODO_FILE)
+        todo.refresh()
         todo.show()
     elif args.sync:
         manager.sync()
+        todo.refresh()
+        todo.show()
     else:
         todo.show()
 
