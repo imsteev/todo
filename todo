@@ -4,7 +4,6 @@ import datetime
 import json
 import prettytable
 import time
-import webbrowser
 
 import manager
 
@@ -173,6 +172,7 @@ if __name__ == "__main__":
         todo_item = todo.get(int(args.goto[0]) - 1)
         item_link = todo_item.get('link')
         if item_link:
+            import webbrowser
             webbrowser.open_new(item_link)
     elif args.toggle_complete:
         index = int(args.toggle_complete) - 1
