@@ -86,9 +86,13 @@ class Todo(object):
 
     def show(self):
         """
-        1. item text
-        2. item text
-        ..
+        +---+----------------------------+------+
+        | # | Text                       | Link |
+        +---+----------------------------+------+
+        | 1 | get groceries at 2 PM      | -    |
+        | 2 | pick up contact lenses     | -    |
+        | 3 | view apartment on Saturday | -    |
+        +---+----------------------------+------+
         """
         pt = prettytable.PrettyTable(field_names=['#', 'Text', 'Link'])
         pt.align['Link'] = 'l'
