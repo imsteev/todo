@@ -12,7 +12,7 @@ Create a config.json:
 
 ```
 {
-    "apps": {
+    "3p": {
         "dropbox": {
             "appKey": "yourAppKey",
             "appSecret": "yourAppSecret",

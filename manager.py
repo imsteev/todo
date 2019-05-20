@@ -8,7 +8,7 @@ from dropbox.files import WriteMode
 with open('config.json', 'r') as f:
     config = json.load(f)
 
-dbx = dropbox.Dropbox(config['apps']['dropbox']['accessToken'])
+dbx = dropbox.Dropbox(config['3p']['dropbox']['accessToken'])
 
 TODO_FOLDER = config['TODO_FOLDER']
 EXTERNAL_TODO_FOLDER = config['EXTERNAL_TODO_FOLDER']
