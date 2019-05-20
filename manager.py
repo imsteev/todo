@@ -14,7 +14,7 @@ TODO_FOLDER = config['TODO_FOLDER']
 EXTERNAL_TODO_FOLDER = config['EXTERNAL_TODO_FOLDER']
 
 TODO_FILE = os.path.join(TODO_FOLDER, config['TODO_FILENAME'])
-EXTERNAL_TODO_FILE = os.path.join(EXTERNAL_TODO_FOLDER, config['EXTERNAL_TODO_FILENAME'])
+EXTERNAL_TODO_FILE = os.path.join(EXTERNAL_TODO_FOLDER, config['TODO_FILENAME'])
 
 def push(src=TODO_FILE, dest=EXTERNAL_TODO_FILE):
     with open(src, 'rb') as f:
