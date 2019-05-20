@@ -21,7 +21,8 @@ Create a config.json:
     },
     "TODO_FOLDER": "/Users/Stephen/Developer/todo/",
     "TODO_FILENAME": "todo.json",
-    "EXTERNAL_TODO_FILEPATH": "<path_in_storage_folder>"
+    "EXTERNAL_TODO_FOLDER": "/steevetodo/",
+    "EXTERNAL_TODO_FILENAME": "todo15.json"
 }
 ```
 
