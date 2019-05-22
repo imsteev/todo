@@ -5,16 +5,18 @@ import tempfile
 import dropbox
 from dropbox.files import WriteMode
 
-with open('config.json', 'r') as f:
-    config = json.load(f)
+PROJECT_FOLDER = os.path.dirname(os.path.abspath(__file__))
 
-dbx = dropbox.Dropbox(config['3p']['dropbox']['accessToken'])
+with open(os.path.join(PROJECT_FOLDER, 'config.json'), 'r') as f:
+    config = json.load(f)
 
 TODO_FOLDER = config['TODO_FOLDER']
 EXTERNAL_TODO_FOLDER = config['EXTERNAL_TODO_FOLDER']
 
 TODO_FILE = os.path.join(TODO_FOLDER, config['TODO_FILENAME'])
 EXTERNAL_TODO_FILE = os.path.join(EXTERNAL_TODO_FOLDER, config['TODO_FILENAME'])
+
+dbx = dropbox.Dropbox(config['3p']['dropbox']['accessToken'])
 
 def push(src=TODO_FILE, dest=EXTERNAL_TODO_FILE):
     with open(src, 'rb') as f:
